@@ -1,0 +1,267 @@
+import tensorflow as tf
+tf.__version__
+2.18.0
+
+from tensorflow import keras
+keras.__version__
+3.8.0
+
+import tensorflow as tf
+tf.__version__
+2.18.0
+
+from tensorflow import keras
+keras.__version__
+3.8.0
+
+%pwd
+/content
+%cd /content/drive/MyDrive/data
+/content/drive/MyDrive/data
+
+%pwd
+/content/drive/MyDrive/data
+cat-dog-data.zip/  'Copy of image classification using tensorflow.ipynb'
+
+!unzip cat-dog-data.zip
+unzip:  cannot find or open cat-dog-data.zip, cat-dog-data.zip.zip or cat-dog-data.zip.ZIP.
+
+# prompt: ! unzip cat-dog-data.zip
+
+# Assuming the zip file contains directories 'cat' and 'dog' within
+# a parent directory, and you want to extract them to the current directory.
+# If the zip file has a different structure, you might need to adjust the
+# destination path or the unzip command options.
+!unzip -q cat-dog-data.zip -d .
+
+# You might want to verify the extraction
+!ls
+unzip:  cannot find or open cat-dog-data.zip, cat-dog-data.zip.zip or cat-dog-data.zip.ZIP.
+drive  sample_data
+
+%ls
+drive/  sample_data/
+
+#import package
+from tensorflow.keras.layers import Input, Lambda, Dense, Flatten
+from tensorflow.keras.models import Model
+from tensorflow.keras.applications.vgg16 import VGG16
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.preprocessing.image import ImageDataGenerator,load_img
+from tensorflow.keras.models import Sequential
+import numpy as np
+from glob import glob
+
+#set constant
+IMAGE_SIZE = [224,224]
+
+train_path ="/content/drive/MyDrive/data/traning"
+valid_path ="/content/drive/MyDrive/data/validation"
+# Download vgg16 pretrained model
+vgg16 = VGG16(input_shape = IMAGE_SIZE + [3], weights = "imagenet", include_top = False)
+
+for layer in vgg16.layers:
+  print(layer)
+<InputLayer name=input_layer_1, built=True>
+<Conv2D name=block1_conv1, built=True>
+<Conv2D name=block1_conv2, built=True>
+<MaxPooling2D name=block1_pool, built=True>
+<Conv2D name=block2_conv1, built=True>
+<Conv2D name=block2_conv2, built=True>
+<MaxPooling2D name=block2_pool, built=True>
+<Conv2D name=block3_conv1, built=True>
+<Conv2D name=block3_conv2, built=True>
+<Conv2D name=block3_conv3, built=True>
+<MaxPooling2D name=block3_pool, built=True>
+<Conv2D name=block4_conv1, built=True>
+<Conv2D name=block4_conv2, built=True>
+<Conv2D name=block4_conv3, built=True>
+<MaxPooling2D name=block4_pool, built=True>
+<Conv2D name=block5_conv1, built=True>
+<Conv2D name=block5_conv2, built=True>
+<Conv2D name=block5_conv3, built=True>
+<MaxPooling2D name=block5_pool, built=True>
+
+for layer in vgg16.layers:
+  print(layer)
+<InputLayer name=input_layer_1, built=True>
+<Conv2D name=block1_conv1, built=True>
+<Conv2D name=block1_conv2, built=True>
+<MaxPooling2D name=block1_pool, built=True>
+<Conv2D name=block2_conv1, built=True>
+<Conv2D name=block2_conv2, built=True>
+<MaxPooling2D name=block2_pool, built=True>
+<Conv2D name=block3_conv1, built=True>
+<Conv2D name=block3_conv2, built=True>
+<Conv2D name=block3_conv3, built=True>
+<MaxPooling2D name=block3_pool, built=True>
+<Conv2D name=block4_conv1, built=True>
+<Conv2D name=block4_conv2, built=True>
+<Conv2D name=block4_conv3, built=True>
+<MaxPooling2D name=block4_pool, built=True>
+<Conv2D name=block5_conv1, built=True>
+<Conv2D name=block5_conv2, built=True>
+<Conv2D name=block5_conv3, built=True>
+<MaxPooling2D name=block5_pool, built=True>
+
+For layer in vgg16.layers:
+  layer.trainable = False
+
+for layer in vgg16.layers:
+  print(layer.name, layer.trainable)
+input_layer_1 False
+block1_conv1 False
+block1_conv2 False
+block1_pool False
+block2_conv1 False
+block2_conv2 False
+block2_pool False
+block3_conv1 False
+block3_conv2 False
+block3_conv3 False
+block3_pool False
+block4_conv1 False
+block4_conv2 False
+block4_conv3 False
+block4_pool False
+block5_conv1 False
+block5_conv2 False
+block5_conv3 False
+block5_pool False
+
+vgg16.summary()
+Model:"vgg16"
+━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓
+┃ Layer (type)                    ┃ Output Shape           ┃       Param # ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
+│ input_layer_1 (InputLayer)      │ (None, 224, 224, 3)    │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block1_conv1 (Conv2D)           │ (None, 224, 224, 64)   │         1,792 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block1_conv2 (Conv2D)           │ (None, 224, 224, 64)   │        36,928 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block1_pool (MaxPooling2D)      │ (None, 112, 112, 64)   │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block2_conv1 (Conv2D)           │ (None, 112, 112, 128)  │        73,856 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block2_conv2 (Conv2D)           │ (None, 112, 112, 128)  │       147,584 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block2_pool (MaxPooling2D)      │ (None, 56, 56, 128)    │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block3_conv1 (Conv2D)           │ (None, 56, 56, 256)    │       295,168 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block3_conv2 (Conv2D)           │ (None, 56, 56, 256)    │       590,080 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block3_conv3 (Conv2D)           │ (None, 56, 56, 256)    │       590,080 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block3_pool (MaxPooling2D)      │ (None, 28, 28, 256)    │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block4_conv1 (Conv2D)           │ (None, 28, 28, 512)    │     1,180,160 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block4_conv2 (Conv2D)           │ (None, 28, 28, 512)    │     2,359,808 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block4_conv3 (Conv2D)           │ (None, 28, 28, 512)    │     2,359,808 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block4_pool (MaxPooling2D)      │ (None, 14, 14, 512)    │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block5_conv1 (Conv2D)           │ (None, 14, 14, 512)    │     2,359,808 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block5_conv2 (Conv2D)           │ (None, 14, 14, 512)    │     2,359,808 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block5_conv3 (Conv2D)           │ (None, 14, 14, 512)    │     2,359,808 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ block5_pool (MaxPooling2D)      │ (None, 7, 7, 512)      │             0 │
+└─────────────────────────────────┴────────────────────────┴───────────────┘
+ Total params: 14,714,688 (56.13 MB)
+ Trainable params: 0 (0.00 B)
+ Non-trainable params: 14,714,688 (56.13 MB)
+
+folder = glob("train/*")
+folder
+[]
+
+len(folder)
+0
+
+#adding our custom dense layers
+
+model = Sequential()
+model.add(vgg16)
+model.add(Flatten())
+model.add(Dense(256, activation = 'relu'))
+model.add(Dense(2, activation = 'softmax'))
+
+model.summary()
+Model: "sequential"
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┓
+┃ Layer (type)                    ┃ Output Shape           ┃       Param # ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━┩
+│ vgg16 (Functional)              │ (None, 7, 7, 512)      │    14,714,688 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ flatten (Flatten)               │ (None, 25088)          │             0 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense (Dense)                   │ (None, 256)            │     6,422,784 │
+├─────────────────────────────────┼────────────────────────┼───────────────┤
+│ dense_1 (Dense)                 │ (None, 2)              │           514 │
+└─────────────────────────────────┴────────────────────────┴───────────────┘
+ Total params: 21,137,986 (80.64 MB)
+ Trainable params: 6,423,298 (24.50 MB)
+ Non-trainable params: 14,714,688 (56.13 MB)
+
+model.compile(
+    loss = 'categorical_crossentropy',
+    optimizer = 'adam',
+    metrics =['accuracy']
+
+)
+
+## Image processing
+
+train_datagen = ImageDataGenerator(
+    rescale = 1./255,
+    shear_range = 0.2,
+    zoom_range = 0.2,
+    horizontal_flip = True
+)
+
+test_datagen = ImageDataGenerator(rescale = 1./255)
+
+# loading images
+
+trainig_set = train_datagen.flow_from_directory(
+    train_path,
+    target_size = (224,224),
+    batch_size = 32,
+    class_mode = 'categorical'
+
+)
+Found 7 images belonging to 2 classes.
+
+# loading test images
+
+test_set = test_datagen.flow_from_directory(
+    valid_path,
+    target_size = (224,224),
+    batch_size = 32,
+    class_mode = 'categorical'
+
+)
+Found 0 images belonging to 0 classes.
+
+history = model.fit(
+    trainig_set,
+    validation_data = test_set,
+    epochs = 0,
+    steps_per_epoch = len(trainig_set),
+    validation_steps = len(test_set)
+)
+
+history.history
+{}
+
+import matplotlib.pyplot as plt
+
+plt.plot(history.history['val_loss'], label = 'val_loss')
+plt.legend()
+plt.savefig("loss_graph.png")  # Save **before** showing
+plt.show()
